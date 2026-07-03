@@ -39,7 +39,8 @@ menu = st.sidebar.selectbox(
         "🟢 Matching CV + Poste",
         "🔵 CV → Postes",
         "🔴 Poste → Candidats",
-        "📬 Suivi candidatures"
+        "📬 Suivi candidatures",
+        "📊 Tableau de bord"
     ]
 )
 
@@ -72,8 +73,8 @@ def save_jsonl(path, data):
 # ACCUEIL
 # ----------------------------
 if menu == "🏠 Accueil":
-    st.subheader("Assistant IA RH simplifié")
-    st.write("Analyse CV, fiches de poste et matching pour agences ID'EES.")
+    st.subheader("Assistant RH ID'EES INTERIM")
+    st.write("CV, fiches de poste, matching et suivi des candidatures par agence.")
 
 # ----------------------------
 # 1. MATCHING CV + POSTE
@@ -103,19 +104,6 @@ elif menu == "🟢 Matching CV + Poste":
 
         st.write("Mots clés :", list(common)[:20])
 
-        # ----------------------------
-        # STOCKAGE CV + POSTE
-        # ----------------------------
-        save_jsonl(
-            f"data/cv_{agence.replace(' ', '_')}.jsonl",
-            {"text": cv_text[:2000]}
-        )
-
-        save_jsonl(
-            f"data/poste_{agence.replace(' ', '_')}.jsonl",
-            {"text": job_text[:2000]}
-        )
-
 # ----------------------------
 # 2. CV → POSTES
 # ----------------------------
@@ -129,13 +117,13 @@ elif menu == "🔵 CV → Postes":
 
         cv_text = extract_text(cv_file)
 
-        postes_file = f"data/poste_{agence.replace(' ', '_')}.jsonl"
+        poste_file = f"data/poste_{agence.replace(' ', '_')}.jsonl"
 
-        if not os.path.exists(postes_file):
+        if not os.path.exists(poste_file):
             st.warning("Aucune fiche de poste enregistrée pour cette agence")
         else:
 
-            with open(postes_file, "r", encoding="utf-8") as f:
+            with open(poste_file, "r", encoding="utf-8") as f:
                 postes = [json.loads(l)["text"] for l in f.readlines()]
 
             best_score = 0
@@ -147,7 +135,7 @@ elif menu == "🔵 CV → Postes":
             st.metric("Score global", f"{best_score:.0f} %")
 
             if best_score >= 70:
-                st.success("🟢 CV compatible avec missions disponibles")
+                st.success("🟢 CV compatible avec missions")
             elif best_score >= 40:
                 st.warning("🟡 CV partiellement exploitable")
             else:
@@ -186,17 +174,17 @@ elif menu == "🔴 Poste → Candidats":
             if best_score >= 70:
                 st.success("🟢 Candidat recommandé")
             else:
-                st.warning("🟡 Aucun candidat idéal, à valider")
+                st.warning("🟡 Aucun candidat idéal")
 
 # ----------------------------
 # 4. SUIVI CANDIDATURES
 # ----------------------------
 elif menu == "📬 Suivi candidatures":
 
-    st.subheader("Suivi CV envoyé")
+    st.subheader("Suivi des candidatures")
 
     nom = st.text_input("Nom candidat")
-    poste = st.text_input("Poste / Mission")
+    poste = st.text_input("Mission / Poste")
 
     statut = st.selectbox(
         "Statut",
@@ -215,9 +203,9 @@ elif menu == "📬 Suivi candidatures":
         )
 
         st.success("Suivi enregistré ✔")
- 
+
 # ----------------------------
-# 5. TABLEAU DE BORD AGENCE
+# 5. TABLEAU DE BORD
 # ----------------------------
 elif menu == "📊 Tableau de bord":
 
@@ -232,25 +220,26 @@ elif menu == "📊 Tableau de bord":
         with open(file_path, "r", encoding="utf-8") as f:
             data = [json.loads(line) for line in f.readlines()]
 
-        # Comptage statuts
         missions = len([d for d in data if d["statut"] == "🟢 Mission"])
         attente = len([d for d in data if d["statut"] == "🟡 En attente"])
         refus = len([d for d in data if d["statut"] == "🔴 Refus"])
 
-        # Affichage KPI
         col1, col2, col3 = st.columns(3)
-
         col1.metric("🟢 Missions", missions)
         col2.metric("🟡 En attente", attente)
         col3.metric("🔴 Refus", refus)
 
         st.write("---")
-
-        st.write("### Détail des candidatures")
+        st.write("### Détail")
 
         for d in data[::-1]:
             st.write(f"👤 {d['nom']} → {d['poste']} → {d['statut']}")
+
+ 
+
+
   
 
+    
    
  
