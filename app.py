@@ -216,7 +216,40 @@ elif menu == "📬 Suivi candidatures":
 
         st.success("Suivi enregistré ✔")
  
+# ----------------------------
+# 5. TABLEAU DE BORD AGENCE
+# ----------------------------
+elif menu == "📊 Tableau de bord":
 
+    st.subheader(f"Tableau de bord - {agence}")
+
+    file_path = f"data/suivi_{agence.replace(' ', '_')}.jsonl"
+
+    if not os.path.exists(file_path):
+        st.warning("Aucune donnée pour cette agence")
+    else:
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = [json.loads(line) for line in f.readlines()]
+
+        # Comptage statuts
+        missions = len([d for d in data if d["statut"] == "🟢 Mission"])
+        attente = len([d for d in data if d["statut"] == "🟡 En attente"])
+        refus = len([d for d in data if d["statut"] == "🔴 Refus"])
+
+        # Affichage KPI
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("🟢 Missions", missions)
+        col2.metric("🟡 En attente", attente)
+        col3.metric("🔴 Refus", refus)
+
+        st.write("---")
+
+        st.write("### Détail des candidatures")
+
+        for d in data[::-1]:
+            st.write(f"👤 {d['nom']} → {d['poste']} → {d['statut']}")
   
 
    
