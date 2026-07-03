@@ -28,7 +28,35 @@ if menu == "🏠 Accueil":
 elif menu == "📄 Analyse CV":
     st.subheader("Analyse CV - ID'EES INTERIM")
 
+    import pdfplumber
+
     cv_file = st.file_uploader("Déposez un CV (PDF)", type=["pdf"])
     job_file = st.file_uploader("Déposez une fiche de poste (PDF)", type=["pdf"])
 
-    st.write(list(common_words)[:30])
+    if cv_file and job_file:
+        st.success("Fichiers reçus ✔")
+
+        with pdfplumber.open(cv_file) as pdf:
+            cv_text = ""
+            for page in pdf.pages:
+                cv_text += page.extract_text() or ""
+
+        with pdfplumber.open(job_file) as pdf:
+            job_text = ""
+            for page in pdf.pages:
+                job_text += page.extract_text() or ""
+
+        st.info("Analyse en cours...")
+
+        cv_words = set(cv_text.lower().split())
+        job_words = set(job_text.lower().split())
+
+        common_words = cv_words.intersection(job_words)
+
+        score = (len(common_words) / len(job_words) * 100) if len(job_words) > 0 else 0
+
+        st.write("### Résultat de compatibilité")
+        st.metric("Score", f"{score:.0f} %")
+
+        st.write("### Mots communs détectés")
+        st.write(list(common_words)[:30])
