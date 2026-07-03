@@ -2,6 +2,7 @@ import streamlit as st
 import pdfplumber
 import json
 import os
+import re
 
 # ----------------------------
 # CONFIG
@@ -47,23 +48,40 @@ menu = st.sidebar.selectbox(
 # ----------------------------
 # OUTILS
 # ----------------------------
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r"[^a-zàâçéèêëîïôûùüÿñæœ ]", " ", text)
+    words = text.split()
+
+    stopwords = {
+        "de", "du", "des", "le", "la", "les", "et", "en", "pour",
+        "un", "une", "dans", "sur", "avec", "au", "aux", "ce", "ces",
+        "est", "être", "à", "formation"
+    }
+
+    return set([w for w in words if w not in stopwords and len(w) > 2])
+
+
 def extract_text(file):
     text = ""
     with pdfplumber.open(file) as pdf:
         for page in pdf.pages:
             text += page.extract_text() or ""
-    return text.lower()
+    return text
+
 
 def score_text(cv_text, job_text):
-    cv_words = set(cv_text.split())
-    job_words = set(job_text.split())
+    cv_words = clean_text(cv_text)
+    job_words = clean_text(job_text)
 
     if len(job_words) == 0:
         return 0, set()
 
     common = cv_words.intersection(job_words)
     score = len(common) / len(job_words) * 100
+
     return score, common
+
 
 def save_jsonl(path, data):
     with open(path, "a", encoding="utf-8") as f:
@@ -73,15 +91,15 @@ def save_jsonl(path, data):
 # ACCUEIL
 # ----------------------------
 if menu == "🏠 Accueil":
-    st.subheader("Assistant RH ID'EES INTERIM")
-    st.write("CV, fiches de poste, matching et suivi des candidatures par agence.")
+    st.subheader("Assistant IA RH ID'EES INTERIM")
+    st.write("CV, postes, matching et suivi par agence.")
 
 # ----------------------------
 # 1. MATCHING CV + POSTE
 # ----------------------------
 elif menu == "🟢 Matching CV + Poste":
 
-    st.subheader("Matching CV / Fiche de poste")
+    st.subheader("Matching CV / Poste")
 
     cv_file = st.file_uploader("CV (PDF)", type=["pdf"])
     job_file = st.file_uploader("Fiche de poste (PDF)", type=["pdf"])
@@ -102,7 +120,17 @@ elif menu == "🟢 Matching CV + Poste":
         else:
             st.error("🔴 Profil non adapté")
 
-        st.write("Mots clés :", list(common)[:20])
+        st.write("Mots clés :", ", ".join(list(common)[:20]))
+
+        save_jsonl(
+            f"data/cv_{agence.replace(' ', '_')}.jsonl",
+            {"text": cv_text[:2000]}
+        )
+
+        save_jsonl(
+            f"data/poste_{agence.replace(' ', '_')}.jsonl",
+            {"text": job_text[:2000]}
+        )
 
 # ----------------------------
 # 2. CV → POSTES
@@ -117,13 +145,13 @@ elif menu == "🔵 CV → Postes":
 
         cv_text = extract_text(cv_file)
 
-        poste_file = f"data/poste_{agence.replace(' ', '_')}.jsonl"
+        file_postes = f"data/poste_{agence.replace(' ', '_')}.jsonl"
 
-        if not os.path.exists(poste_file):
-            st.warning("Aucune fiche de poste enregistrée pour cette agence")
+        if not os.path.exists(file_postes):
+            st.warning("Aucune fiche de poste enregistrée")
         else:
 
-            with open(poste_file, "r", encoding="utf-8") as f:
+            with open(file_postes, "r", encoding="utf-8") as f:
                 postes = [json.loads(l)["text"] for l in f.readlines()]
 
             best_score = 0
@@ -135,7 +163,7 @@ elif menu == "🔵 CV → Postes":
             st.metric("Score global", f"{best_score:.0f} %")
 
             if best_score >= 70:
-                st.success("🟢 CV compatible avec missions")
+                st.success("🟢 CV compatible missions")
             elif best_score >= 40:
                 st.warning("🟡 CV partiellement exploitable")
             else:
@@ -146,7 +174,7 @@ elif menu == "🔵 CV → Postes":
 # ----------------------------
 elif menu == "🔴 Poste → Candidats":
 
-    st.subheader("Poste → candidats compatibles")
+    st.subheader("Poste → candidats")
 
     job_file = st.file_uploader("Fiche de poste (PDF)", type=["pdf"])
 
@@ -154,13 +182,13 @@ elif menu == "🔴 Poste → Candidats":
 
         job_text = extract_text(job_file)
 
-        cv_file_path = f"data/cv_{agence.replace(' ', '_')}.jsonl"
+        file_cv = f"data/cv_{agence.replace(' ', '_')}.jsonl"
 
-        if not os.path.exists(cv_file_path):
-            st.warning("Aucun CV enregistré pour cette agence")
+        if not os.path.exists(file_cv):
+            st.warning("Aucun CV enregistré")
         else:
 
-            with open(cv_file_path, "r", encoding="utf-8") as f:
+            with open(file_cv, "r", encoding="utf-8") as f:
                 cvs = [json.loads(l)["text"] for l in f.readlines()]
 
             best_score = 0
@@ -174,17 +202,17 @@ elif menu == "🔴 Poste → Candidats":
             if best_score >= 70:
                 st.success("🟢 Candidat recommandé")
             else:
-                st.warning("🟡 Aucun candidat idéal")
+                st.warning("🟡 À valider")
 
 # ----------------------------
 # 4. SUIVI CANDIDATURES
 # ----------------------------
 elif menu == "📬 Suivi candidatures":
 
-    st.subheader("Suivi des candidatures")
+    st.subheader("Suivi candidatures")
 
     nom = st.text_input("Nom candidat")
-    poste = st.text_input("Mission / Poste")
+    poste = st.text_input("Mission")
 
     statut = st.selectbox(
         "Statut",
@@ -202,7 +230,7 @@ elif menu == "📬 Suivi candidatures":
             }
         )
 
-        st.success("Suivi enregistré ✔")
+        st.success("Enregistré ✔")
 
 # ----------------------------
 # 5. TABLEAU DE BORD
@@ -211,29 +239,43 @@ elif menu == "📊 Tableau de bord":
 
     st.subheader(f"Tableau de bord - {agence}")
 
-    file_path = f"data/suivi_{agence.replace(' ', '_')}.jsonl"
+    file = f"data/suivi_{agence.replace(' ', '_')}.jsonl"
 
-    if not os.path.exists(file_path):
-        st.warning("Aucune donnée pour cette agence")
+    if not os.path.exists(file):
+        st.warning("Aucune donnée")
     else:
 
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = [json.loads(line) for line in f.readlines()]
+        with open(file, "r", encoding="utf-8") as f:
+            data = [json.loads(l) for l in f.readlines()]
 
         missions = len([d for d in data if d["statut"] == "🟢 Mission"])
         attente = len([d for d in data if d["statut"] == "🟡 En attente"])
         refus = len([d for d in data if d["statut"] == "🔴 Refus"])
 
         col1, col2, col3 = st.columns(3)
-        col1.metric("🟢 Missions", missions)
-        col2.metric("🟡 En attente", attente)
-        col3.metric("🔴 Refus", refus)
+        col1.metric("Missions", missions)
+        col2.metric("En attente", attente)
+        col3.metric("Refus", refus)
 
         st.write("---")
-        st.write("### Détail")
 
         for d in data[::-1]:
-            st.write(f"👤 {d['nom']} → {d['poste']} → {d['statut']}")
+            st.write(f"{d['nom']} → {d['poste']} → {d['statut']}")
+  
+
+
+ 
+
+   
+
+      
+
+      
+              
+
+  
+
+       
 
  
 
