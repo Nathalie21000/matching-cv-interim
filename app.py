@@ -129,25 +129,12 @@ if cv_file and job_file:
 # ----------------------------
 elif menu == "🔴 Poste → Candidats":
 
-    st.subheader("Poste → candidats compatibles")
+    st.metric("Compatibilité candidat", f"{score:.0f} %")
 
-    job_file = st.file_uploader("Fiche de poste (PDF)", type=["pdf"])
-    cv_file = st.file_uploader("CV candidat (PDF)", type=["pdf"])
-
-    if job_file and cv_file:
-
-        job_text = extract_text(job_file)
-        cv_text = extract_text(cv_file)
-
-        score, common = score_text(cv_text, job_text)
-
-        st.metric("Compatibilité candidat", f"{score:.0f} %")
-
-        if score > 70:
-            st.success("🟢 Candidat fortement recommandé")
-        else:
-            st.warning("🟡 Candidat à valider")
-
+if score >= 70:
+    st.success("🟢 Candidat recommandé pour la mission")
+else:
+    st.warning("🟡 Candidat à valider avant envoi")
 # ----------------------------
 # 4. SUIVI CANDIDATURES
 # ----------------------------
