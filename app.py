@@ -86,11 +86,13 @@ elif menu == "📄 Analyse CV":
                 "cv_name": cv_file.name,
                 "job_name": job_file.name
             }
+            file_path = f"data/cv_{agence.replace(' ', '_')}.jsonl"
 
-            with open("data/cv_storage.json", "a", encoding="utf-8") as f:
+            with open(file_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(cv_data) + "\n")
 
             st.info("CV enregistré dans la CVthèque ✔")
+         
 
         except Exception as e:
             st.error("Erreur lors de la lecture des PDF")
