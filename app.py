@@ -44,37 +44,22 @@ if menu == "🏠 Accueil":
 elif menu == "📄 Analyse CV":
     st.subheader("Analyse CV - ID'EES INTERIM")
 
-
-
     cv_file = st.file_uploader("Déposez un CV (PDF)", type=["pdf"])
     job_file = st.file_uploader("Déposez une fiche de poste (PDF)", type=["pdf"])
 
     if cv_file and job_file:
         st.success("Fichiers reçus ✔")
-st.success("Fichiers reçus ✔")
-      import json
 
-    cv_data = {
-        "agence": agence,
-        "cv_name": cv_file.name,
-        "job_name": job_file.name
-    }
-
-    try:
-        with open("data/cv_storage.json", "a", encoding="utf-8") as f:
-            f.write(json.dumps(cv_data) + "\n")
-
-        st.info("CV enregistré dans la CVthèque ✔")
-
-    except Exception as e:
-        st.error("Erreur sauvegarde CV")
-        st.write(str(e))      try:
+        try:
+            # Lecture CV
             with pdfplumber.open(cv_file) as pdf:
                 cv_text = "".join(page.extract_text() or "" for page in pdf.pages)
 
+            # Lecture fiche poste
             with pdfplumber.open(job_file) as pdf:
                 job_text = "".join(page.extract_text() or "" for page in pdf.pages)
 
+            # Analyse
             st.info("Analyse en cours...")
 
             cv_words = set(cv_text.lower().split())
@@ -90,16 +75,27 @@ st.success("Fichiers reçus ✔")
                 st.metric("Score", f"{score:.0f} %")
 
                 st.write("### Mots clés communs")
-                if len(common_words) > 0:
+                if common_words:
                     st.write(list(common_words)[:30])
                 else:
                     st.write("Aucun mot commun détecté")
+
+            # Sauvegarde CV (CVthèque simple)
+            cv_data = {
+                "agence": agence,
+                "cv_name": cv_file.name,
+                "job_name": job_file.name
+            }
+
+            with open("data/cv_storage.json", "a", encoding="utf-8") as f:
+                f.write(json.dumps(cv_data) + "\n")
+
+            st.info("CV enregistré dans la CVthèque ✔")
 
         except Exception as e:
             st.error("Erreur lors de la lecture des PDF")
             st.write(str(e))
 
-    
+  
+        
 
-
-      
