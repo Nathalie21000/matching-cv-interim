@@ -1,5 +1,10 @@
 import streamlit as st
+import os
+import json
 
+DATA_DIR = "data"
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
 st.set_page_config(page_title="ID'EES INTERIM - IA Recrutement", layout="wide")
 
 st.title("ID'EES INTERIM - Assistant IA Recrutement")
