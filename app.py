@@ -3,7 +3,18 @@ import streamlit as st
 st.set_page_config(page_title="ID'EES INTERIM - IA Recrutement", layout="wide")
 
 st.title("ID'EES INTERIM - Assistant IA Recrutement")
-
+agence = st.sidebar.selectbox(
+    "🏢 Agence ID'EES INTERIM",
+    [
+        "ID'EES ALENÇON",
+        "ID'EES AVRANCHES",
+        "ID'EES DINAN",
+        "ID'EES HONFLEUR",
+        "ID'EES LE MANS",
+        "ID'EES RENNES",
+        "ID'EES SAINT-MALO"
+    ]
+)
 menu = st.sidebar.selectbox(
     "Menu",
     [
