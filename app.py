@@ -50,8 +50,24 @@ elif menu == "📄 Analyse CV":
 
     if cv_file and job_file:
         st.success("Fichiers reçus ✔")
+st.success("Fichiers reçus ✔")
+      import json
 
-        try:
+    cv_data = {
+        "agence": agence,
+        "cv_name": cv_file.name,
+        "job_name": job_file.name
+    }
+
+    try:
+        with open("data/cv_storage.json", "a", encoding="utf-8") as f:
+            f.write(json.dumps(cv_data) + "\n")
+
+        st.info("CV enregistré dans la CVthèque ✔")
+
+    except Exception as e:
+        st.error("Erreur sauvegarde CV")
+        st.write(str(e))      try:
             with pdfplumber.open(cv_file) as pdf:
                 cv_text = "".join(page.extract_text() or "" for page in pdf.pages)
 
