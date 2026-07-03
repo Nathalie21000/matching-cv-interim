@@ -37,33 +37,36 @@ elif menu == "📄 Analyse CV":
 
         try:
             with pdfplumber.open(cv_file) as pdf:
-                cv_text = ""
-                for page in pdf.pages:
-                    cv_text += page.extract_text() or ""
+                cv_text = "".join(page.extract_text() or "" for page in pdf.pages)
 
             with pdfplumber.open(job_file) as pdf:
-                job_text = ""
-                for page in pdf.pages:
-                    job_text += page.extract_text() or ""
+                job_text = "".join(page.extract_text() or "" for page in pdf.pages)
 
             st.info("Analyse en cours...")
 
             cv_words = set(cv_text.lower().split())
             job_words = set(job_text.lower().split())
 
-            common_words = cv_words.intersection(job_words)
+            if len(job_words) == 0:
+                st.warning("Fiche de poste vide ou illisible")
+            else:
+                common_words = cv_words.intersection(job_words)
+                score = len(common_words) / len(job_words) * 100
 
-            score = (len(common_words) / len(job_words) * 100) if len(job_words) > 0 else 0
+                st.write("### Résultat de compatibilité")
+                st.metric("Score", f"{score:.0f} %")
 
-            st.write("### Résultat de compatibilité")
-            st.metric("Score", f"{score:.0f} %")
-
-            st.write("### Mots clés communs")
-            st.write(list(common_words)[:30])
+                st.write("### Mots clés communs")
+                if len(common_words) > 0:
+                    st.write(list(common_words)[:30])
+                else:
+                    st.write("Aucun mot commun détecté")
 
         except Exception as e:
-            st.error("Erreur lors de la lecture du PDF")
+            st.error("Erreur lors de la lecture des PDF")
             st.write(str(e))
+
+    
 
 
       
