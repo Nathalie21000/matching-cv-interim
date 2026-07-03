@@ -1,33 +1,39 @@
 import streamlit as st
-from PyPDF2 import PdfReader
 
-st.title("Matching CV / Fiche de poste - Intérim")
+st.set_page_config(page_title="ID'EES INTERIM - IA Recrutement", layout="wide")
 
-def extract_text(file):
-    reader = PdfReader(file)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() or ""
-    return text.lower()
+st.title("ID'EES INTERIM - Assistant IA Recrutement")
 
-cv_file = st.file_uploader("CV (PDF)", type=["pdf"])
-job_file = st.file_uploader("Fiche de poste (PDF)", type=["pdf"])
+menu = st.sidebar.selectbox(
+    "Menu",
+    [
+        "🏠 Accueil",
+        "📄 Analyse CV",
+        "👥 CVthèque (bientôt)",
+        "📋 Fiches de poste (bientôt)",
+        "🤝 Matching (bientôt)"
+    ]
+)
 
-if cv_file and job_file:
-    cv_text = extract_text(cv_file)
-    job_text = extract_text(job_file)
+if menu == "🏠 Accueil":
+    st.subheader("Bienvenue dans votre assistant de recrutement")
+    st.write("""
+    Cet outil va vous permettre de :
+    - Analyser des CV automatiquement
+    - Comparer un CV à une fiche de poste
+    - Construire une CVthèque intelligente
+    - Faire du matching candidat / poste
+    """)
 
-    cv_words = set(cv_text.split())
-    job_words = set(job_text.split())
+elif menu == "📄 Analyse CV":
+    st.subheader("Analyse CV (version 1)")
+    st.info("Prochaine étape : on va brancher l'IA + PDF")
 
-    if job_words:
-        score = len(cv_words & job_words) / len(job_words) * 100
+elif menu == "👥 CVthèque (bientôt)":
+    st.warning("Module en construction")
 
-        st.write(f"Compatibilité : {round(score,1)} %")
+elif menu == "📋 Fiches de poste (bientôt)":
+    st.warning("Module en construction")
 
-        if score > 75:
-            st.success("Très bon profil")
-        elif score > 50:
-            st.warning("Profil moyen")
-        else:
-            st.error("Profil faible")
+elif menu == "🤝 Matching (bientôt)":
+    st.warning("Module en construction")
