@@ -1,16 +1,27 @@
 import streamlit as st
 import pdfplumber
-import os
 import json
+import os
+
+# ----------------------------
+# CONFIG
+# ----------------------------
+st.set_page_config(page_title="ID'EES INTERIM - IA RH", layout="wide")
 
 DATA_DIR = "data"
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
-st.set_page_config(page_title="ID'EES INTERIM - IA Recrutement", layout="wide")
 
-st.title("ID'EES INTERIM - Assistant IA Recrutement")
+# ----------------------------
+# HEADER
+# ----------------------------
+st.title("ID'EES INTERIM - Assistant IA RH")
+
+# ----------------------------
+# SIDEBAR
+# ----------------------------
 agence = st.sidebar.selectbox(
-    "🏢 Agence ID'EES INTERIM",
+    "🏢 Agence",
     [
         "ID'EES ALENÇON",
         "ID'EES AVRANCHES",
@@ -21,83 +32,147 @@ agence = st.sidebar.selectbox(
         "ID'EES SAINT-MALO"
     ]
 )
+
 menu = st.sidebar.selectbox(
     "Menu",
     [
         "🏠 Accueil",
-        "📄 Analyse CV",
-        "👥 CVthèque (bientôt)",
-        "📋 Fiches de poste (bientôt)",
-        "🤝 Matching (bientôt)"
+        "🟢 Matching CV + Poste",
+        "🔵 CV → Postes",
+        "🔴 Poste → Candidats",
+        "📬 Suivi candidatures"
     ]
 )
 
-if menu == "🏠 Accueil":
-    st.subheader("Bienvenue dans votre assistant de recrutement")
-    st.write("""
-    Cet outil va vous permettre de :
-    - Analyser des CV automatiquement
-    - Comparer un CV à une fiche de poste
-    - Construire une CVthèque intelligente
-    - Faire du matching candidat / poste
-    """)
-elif menu == "📄 Analyse CV":
-    st.subheader("Analyse CV - ID'EES INTERIM")
+# ----------------------------
+# OUTILS
+# ----------------------------
+def extract_text(file):
+    text = ""
+    with pdfplumber.open(file) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+    return text.lower()
 
-    cv_file = st.file_uploader("Déposez un CV (PDF)", type=["pdf"])
-    job_file = st.file_uploader("Déposez une fiche de poste (PDF)", type=["pdf"])
+def score_text(cv_text, job_text):
+    cv_words = set(cv_text.split())
+    job_words = set(job_text.split())
+
+    if len(job_words) == 0:
+        return 0, set()
+
+    common = cv_words.intersection(job_words)
+    score = len(common) / len(job_words) * 100
+    return score, common
+
+# ----------------------------
+# ACCUEIL
+# ----------------------------
+if menu == "🏠 Accueil":
+    st.subheader("Bienvenue dans l'assistant RH ID'EES INTERIM")
+    st.write("Outil d’analyse CV et matching simplifié pour les agences.")
+
+# ----------------------------
+# 1. MATCHING CV + POSTE
+# ----------------------------
+elif menu == "🟢 Matching CV + Poste":
+
+    st.subheader("Matching CV / Fiche de poste")
+
+    cv_file = st.file_uploader("CV (PDF)", type=["pdf"])
+    job_file = st.file_uploader("Fiche de poste (PDF)", type=["pdf"])
 
     if cv_file and job_file:
-        st.success("Fichiers reçus ✔")
+        cv_text = extract_text(cv_file)
+        job_text = extract_text(job_file)
 
-        try:
-            # Lecture CV
-            with pdfplumber.open(cv_file) as pdf:
-                cv_text = "".join(page.extract_text() or "" for page in pdf.pages)
+        score, common = score_text(cv_text, job_text)
 
-            # Lecture fiche poste
-            with pdfplumber.open(job_file) as pdf:
-                job_text = "".join(page.extract_text() or "" for page in pdf.pages)
+        st.metric("Compatibilité", f"{score:.0f} %")
 
-            # Analyse
-            st.info("Analyse en cours...")
+        if score > 70:
+            st.success("🟢 Profil recommandé")
+        elif score > 40:
+            st.warning("🟡 Profil à étudier")
+        else:
+            st.error("🔴 Profil peu compatible")
 
-            cv_words = set(cv_text.lower().split())
-            job_words = set(job_text.lower().split())
+        st.write("Mots clés communs :", list(common)[:20])
 
-            if len(job_words) == 0:
-                st.warning("Fiche de poste vide ou illisible")
-            else:
-                common_words = cv_words.intersection(job_words)
-                score = len(common_words) / len(job_words) * 100
+# ----------------------------
+# 2. CV → POSTES
+# ----------------------------
+elif menu == "🔵 CV → Postes":
 
-                st.write("### Résultat de compatibilité")
-                st.metric("Score", f"{score:.0f} %")
+    st.subheader("CV → Postes disponibles")
 
-                st.write("### Mots clés communs")
-                if common_words:
-                    st.write(list(common_words)[:30])
-                else:
-                    st.write("Aucun mot commun détecté")
+    cv_file = st.file_uploader("CV (PDF)", type=["pdf"])
+    job_file = st.file_uploader("Fiches de poste (PDF ou texte multi)", type=["pdf"])
 
-            # Sauvegarde CV (CVthèque simple)
-            cv_data = {
-                "agence": agence,
-                "cv_name": cv_file.name,
-                "job_name": job_file.name
-            }
-            file_path = f"data/cv_{agence.replace(' ', '_')}.jsonl"
+    if cv_file and job_file:
+        cv_text = extract_text(cv_file)
+        job_text = extract_text(job_file)
 
-            with open(file_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(cv_data) + "\n")
+        score, common = score_text(cv_text, job_text)
 
-            st.info("CV enregistré dans la CVthèque ✔")
-         
+        st.write("### Analyse du CV")
+        st.write("Compétences détectées :", list(set(cv_text.split()))[:20])
 
-        except Exception as e:
-            st.error("Erreur lors de la lecture des PDF")
-            st.write(str(e))
+        st.write("### Compatibilité globale")
+        st.metric("Score global", f"{score:.0f} %")
 
-  
-        
+        st.info("👉 Ce CV peut être proposé sur les missions disponibles")
 
+# ----------------------------
+# 3. POSTE → CANDIDATS
+# ----------------------------
+elif menu == "🔴 Poste → Candidats":
+
+    st.subheader("Poste → candidats compatibles")
+
+    job_file = st.file_uploader("Fiche de poste (PDF)", type=["pdf"])
+    cv_file = st.file_uploader("CV candidat (PDF)", type=["pdf"])
+
+    if job_file and cv_file:
+
+        job_text = extract_text(job_file)
+        cv_text = extract_text(cv_file)
+
+        score, common = score_text(cv_text, job_text)
+
+        st.metric("Compatibilité candidat", f"{score:.0f} %")
+
+        if score > 70:
+            st.success("🟢 Candidat fortement recommandé")
+        else:
+            st.warning("🟡 Candidat à valider")
+
+# ----------------------------
+# 4. SUIVI CANDIDATURES
+# ----------------------------
+elif menu == "📬 Suivi candidatures":
+
+    st.subheader("Suivi CV envoyé")
+
+    nom = st.text_input("Nom candidat")
+    poste = st.text_input("Poste / Mission")
+
+    statut = st.selectbox(
+        "Statut",
+        ["🟡 En attente", "🟢 Mission", "🔴 Refus"]
+    )
+
+    if st.button("Enregistrer suivi"):
+        data = {
+            "agence": agence,
+            "nom": nom,
+            "poste": poste,
+            "statut": statut
+        }
+
+        file_path = f"data/suivi_{agence.replace(' ', '_')}.jsonl"
+
+        with open(file_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(data) + "\n")
+
+        st.success("Suivi enregistré ✔") 
