@@ -90,12 +90,12 @@ elif menu == "🟢 Matching CV + Poste":
 
         st.metric("Compatibilité", f"{score:.0f} %")
 
-        if score > 70:
-            st.success("🟢 Profil recommandé")
-        elif score > 40:
-            st.warning("🟡 Profil à étudier")
-        else:
-            st.error("🔴 Profil peu compatible")
+if score >= 70:
+    st.success("🟢 Profil recommandé")
+elif score >= 40:
+    st.warning("🟡 Profil à étudier")
+else:
+    st.error("🔴 Profil non adapté")
 
         st.write("Mots clés communs :", list(common)[:20])
 
@@ -104,24 +104,25 @@ elif menu == "🟢 Matching CV + Poste":
 # ----------------------------
 elif menu == "🔵 CV → Postes":
 
-    st.subheader("CV → Postes disponibles")
+st.subheader("CV → Postes disponibles")
 
-    cv_file = st.file_uploader("CV (PDF)", type=["pdf"])
-    job_file = st.file_uploader("Fiches de poste (PDF ou texte multi)", type=["pdf"])
+cv_file = st.file_uploader("CV (PDF)", type=["pdf"])
+job_file = st.file_uploader("Fiches de poste (PDF ou texte multi)", type=["pdf"])
 
-    if cv_file and job_file:
-        cv_text = extract_text(cv_file)
-        job_text = extract_text(job_file)
+if cv_file and job_file:
+    cv_text = extract_text(cv_file)
+    job_text = extract_text(job_file)
 
-        score, common = score_text(cv_text, job_text)
+    score, common = score_text(cv_text, job_text)
 
-        st.write("### Analyse du CV")
-        st.write("Compétences détectées :", list(set(cv_text.split()))[:20])
+    st.metric("Score global", f"{score:.0f} %")
 
-        st.write("### Compatibilité globale")
-        st.metric("Score global", f"{score:.0f} %")
-
-        st.info("👉 Ce CV peut être proposé sur les missions disponibles")
+    if score >= 70:
+        st.success("🟢 CV compatible avec les missions disponibles")
+    elif score >= 40:
+        st.warning("🟡 CV partiellement exploitable")
+    else:
+        st.error("🔴 CV peu exploitable pour l’agence")    
 
 # ----------------------------
 # 3. POSTE → CANDIDATS
