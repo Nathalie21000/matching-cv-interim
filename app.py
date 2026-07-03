@@ -1,4 +1,5 @@
 import streamlit as st
+import pdfplumber
 import os
 import json
 
@@ -43,7 +44,7 @@ if menu == "🏠 Accueil":
 elif menu == "📄 Analyse CV":
     st.subheader("Analyse CV - ID'EES INTERIM")
 
-    import pdfplumber
+
 
     cv_file = st.file_uploader("Déposez un CV (PDF)", type=["pdf"])
     job_file = st.file_uploader("Déposez une fiche de poste (PDF)", type=["pdf"])
