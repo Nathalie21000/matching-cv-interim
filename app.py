@@ -101,12 +101,12 @@ page = st.sidebar.radio(
     [
         "📊 Tableau de bord",
         "📄 Importer un CV",
+        "📚 CVthèque",
         "🏢 Importer une fiche de poste",
         "🔍 Matching",
         "📋 Suivi des candidatures",
     ],
 )
-"📚 CVthèque",
 st.sidebar.markdown("---")
 st.sidebar.caption(f"Agence sélectionnée : **{agence}**")
 
