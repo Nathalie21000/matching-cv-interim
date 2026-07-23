@@ -106,7 +106,7 @@ page = st.sidebar.radio(
         "📋 Suivi des candidatures",
     ],
 )
-
+"📚 CVthèque",
 st.sidebar.markdown("---")
 st.sidebar.caption(f"Agence sélectionnée : **{agence}**")
 
